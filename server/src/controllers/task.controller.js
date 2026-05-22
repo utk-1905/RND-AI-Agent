@@ -79,8 +79,39 @@ const getTaskById = async (req, res) => {
   }
 };
 
+/**
+ * Controller for fetching full task details.
+ */
+const getFullTaskDetails = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+
+    if (!taskId) {
+      return res.status(400).json({
+        success: false,
+        message: "Task ID is required.",
+      });
+    }
+
+    const details = await taskService.getFullTaskDetails(taskId);
+
+    return res.status(200).json({
+      success: true,
+      message: "Full task details fetched successfully.",
+      data: details,
+    });
+  } catch (error) {
+    return res.status(404).json({
+      success: false,
+      message: "Failed to fetch full task details.",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createTask,
   getAllTasks,
   getTaskById,
+  getFullTaskDetails,
 };
