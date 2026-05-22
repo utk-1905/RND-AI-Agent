@@ -7,6 +7,7 @@ const seoAgentRoutes = require("./routes/seoAgent.routes");
 const reviewRoutes = require("./routes/review.routes");
 const revisionRoutes = require("./routes/revision.routes");
 const reportRoutes = require("./routes/report.routes");
+const billingRoutes = require("./routes/billing.routes");
 
 const healthRoutes = require("./routes/health.routes");
 const dbTestRoutes = require("./routes/dbTest.routes");
@@ -35,6 +36,7 @@ app.use("/api/agents", seoAgentRoutes);
 app.use("/api/tasks", reviewRoutes);
 app.use("/api/agents", revisionRoutes);
 app.use("/api", reportRoutes);
+app.use("/api/billing", billingRoutes);
 
 // 404 route handler
 app.use((req, res) => {
