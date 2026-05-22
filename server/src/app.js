@@ -4,6 +4,7 @@ const morgan = require("morgan");
 const taskRoutes = require("./routes/task.routes");
 const assignmentRoutes = require("./routes/assignment.routes");
 const seoAgentRoutes = require("./routes/seoAgent.routes");
+const reviewRoutes = require("./routes/review.routes");
 
 const healthRoutes = require("./routes/health.routes");
 const dbTestRoutes = require("./routes/dbTest.routes");
@@ -29,6 +30,7 @@ app.use("/api/db-test", dbTestRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/tasks", assignmentRoutes);
 app.use("/api/agents", seoAgentRoutes);
+app.use("/api/tasks", reviewRoutes);
 
 // 404 route handler
 app.use((req, res) => {
