@@ -1,6 +1,12 @@
 const supabase = require("../config/supabase");
 const { runSeoAgent } = require("../agents/seo.agent");
 
+const {
+  estimateTokensFromText,
+  estimateTokensFromJson,
+  logAiUsage,
+} = require("./usageLogger.service");
+
 /**
  * Run SEO Agent for a specific assigned task.
  */
@@ -107,6 +113,27 @@ const runSeoAgentForTask = async ({ taskId, triggered_by }) => {
     throw new Error(outputError.message);
   }
 
+  // 8.1 Log AI usage in mock mode
+  const inputText = `
+Task Title: ${task.title}
+Task Description: ${task.description}
+Priority: ${task.priority}
+`;
+
+  const inputTokens = estimateTokensFromText(inputText);
+  const outputTokens = estimateTokensFromJson(seoOutput);
+
+  const usageLog = await logAiUsage({
+    taskId,
+    agentId: agent.id,
+    model: "mock-seo-agent-v1",
+    mode: process.env.AI_MODE || "mock",
+    inputTokens,
+    outputTokens,
+    totalCostUsd: 0,
+    status: "success",
+  });
+
   // 9. Update task status to draft_generated
   const { data: updatedTask, error: finalTaskError } = await supabase
     .from("tasks")
@@ -143,6 +170,7 @@ const runSeoAgentForTask = async ({ taskId, triggered_by }) => {
     task: updatedTask,
     assignment,
     output: savedOutput,
+    usage: usageLog,
   };
 };
 
