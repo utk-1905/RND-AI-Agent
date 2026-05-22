@@ -1,6 +1,8 @@
 const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
+const taskRoutes = require("./routes/task.routes");
+const assignmentRoutes = require("./routes/assignment.routes");
 
 const healthRoutes = require("./routes/health.routes");
 const dbTestRoutes = require("./routes/dbTest.routes");
@@ -23,6 +25,8 @@ app.get("/", (req, res) => {
 // API routes
 app.use("/api/health", healthRoutes);
 app.use("/api/db-test", dbTestRoutes);
+app.use("/api/tasks", taskRoutes);
+app.use("/api/tasks", assignmentRoutes);
 
 // 404 route handler
 app.use((req, res) => {
