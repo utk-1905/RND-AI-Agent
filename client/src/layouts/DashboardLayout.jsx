@@ -44,14 +44,15 @@ const DashboardLayout = () => {
               <NavLink
                 key={item.path}
                 to={item.path}
+                end={item.path === "/tasks"}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-3 rounded-xl transition ${
-                    isActive
-                      ? "bg-white text-slate-950"
-                      : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                  `flex items-center gap-3 px-4 py-3 rounded-xl transition ${isActive
+                    ? "bg-white text-slate-950"
+                    : "text-slate-300 hover:bg-slate-800 hover:text-white"
                   }`
                 }
               >
+
                 <Icon size={18} />
                 {item.label}
               </NavLink>
