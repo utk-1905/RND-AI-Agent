@@ -51,3 +51,22 @@ export const finalizeTask = async (taskId) => {
 export const downloadReportUrl = (taskId) => {
   return `http://localhost:5000/api/reports/${taskId}/download`;
 };
+
+export const archiveTask = async (taskId) => {
+  const response = await apiClient.patch(`/tasks/${taskId}/archive`, {
+    changed_by: "CEO",
+  });
+  return response.data;
+};
+
+export const restoreTask = async (taskId) => {
+  const response = await apiClient.patch(`/tasks/${taskId}/restore`, {
+    changed_by: "CEO",
+  });
+  return response.data;
+};
+
+export const deleteTask = async (taskId) => {
+  const response = await apiClient.delete(`/tasks/${taskId}`);
+  return response.data;
+};

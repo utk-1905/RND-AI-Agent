@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
+  archiveTask,
   assignSeoTask,
+  deleteTask,
   downloadReportUrl,
   finalizeTask,
   getFullTaskDetails,
+  restoreTask,
   reviewTask,
   reviseSeoOutput,
   runSeoAgent,
@@ -19,6 +22,7 @@ const statusClass = {
   revision_requested: "bg-orange-100 text-orange-700",
   rejected: "bg-red-100 text-red-700",
   finalized: "bg-emerald-100 text-emerald-700",
+  archived: "bg-zinc-100 text-zinc-700",
 };
 
 const statusLabel = {
@@ -30,6 +34,7 @@ const statusLabel = {
   revision_requested: "Revision Requested",
   rejected: "Rejected by CEO",
   finalized: "Final Report Generated",
+  archived: "Archived",
 };
 
 const getWorkflowHint = (status) => {
@@ -50,6 +55,8 @@ const getWorkflowHint = (status) => {
       return "The final report has been generated. You can download the PDF report.";
     case "rejected":
       return "This task has been rejected. No further action is required.";
+    case "archived":
+      return "This task is archived. Restore it if you want to work on it again.";
     default:
       return "Manage the SEO Agent workflow for this task.";
   }
@@ -66,7 +73,9 @@ const getMessageClass = (message) => {
     lowerMessage.includes("success") ||
     lowerMessage.includes("generated") ||
     lowerMessage.includes("approved") ||
-    lowerMessage.includes("confirmed")
+    lowerMessage.includes("confirmed") ||
+    lowerMessage.includes("archived") ||
+    lowerMessage.includes("restored")
   ) {
     return "border-green-200 bg-green-50 text-green-700";
   }
@@ -76,6 +85,7 @@ const getMessageClass = (message) => {
 
 const TaskDetail = () => {
   const { taskId } = useParams();
+  const navigate = useNavigate();
 
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -113,8 +123,8 @@ const TaskDetail = () => {
       console.error(error);
       setMessage(
         error?.response?.data?.error ||
-        error?.response?.data?.message ||
-        "Action failed."
+          error?.response?.data?.message ||
+          "Action failed."
       );
     } finally {
       setActionLoading(false);
@@ -166,6 +176,31 @@ const TaskDetail = () => {
     );
   };
 
+  const handleDeleteTask = async () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to permanently delete this task? This action cannot be undone."
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setActionLoading(true);
+      setMessage("");
+
+      await deleteTask(taskId);
+      navigate("/tasks");
+    } catch (error) {
+      console.error(error);
+      setMessage(
+        error?.response?.data?.error ||
+          error?.response?.data?.message ||
+          "Failed to delete task."
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   if (loading) {
     return <p className="text-slate-500">Loading task details...</p>;
   }
@@ -193,8 +228,9 @@ const TaskDetail = () => {
 
           <div className="mt-4 flex flex-wrap gap-2">
             <span
-              className={`text-xs font-medium px-3 py-1 rounded-full ${statusClass[task.status] || "bg-slate-100 text-slate-700"
-                }`}
+              className={`text-xs font-medium px-3 py-1 rounded-full ${
+                statusClass[task.status] || "bg-slate-100 text-slate-700"
+              }`}
             >
               {readableStatus}
             </span>
@@ -236,8 +272,9 @@ const TaskDetail = () => {
           </div>
 
           <span
-            className={`text-xs font-medium px-3 py-1 rounded-full w-fit ${statusClass[task.status] || "bg-slate-100 text-slate-700"
-              }`}
+            className={`text-xs font-medium px-3 py-1 rounded-full w-fit ${
+              statusClass[task.status] || "bg-slate-100 text-slate-700"
+            }`}
           >
             {readableStatus}
           </span>
@@ -345,21 +382,59 @@ const TaskDetail = () => {
               Task closed after CEO rejection.
             </div>
           )}
+
+          {task.status !== "archived" && task.status !== "in_progress" && (
+            <button
+              disabled={actionLoading}
+              onClick={() =>
+                runAction(
+                  () => archiveTask(taskId),
+                  "Task archived successfully."
+                )
+              }
+              className="px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 disabled:opacity-50"
+            >
+              Archive Task
+            </button>
+          )}
+
+          {task.status === "archived" && (
+            <button
+              disabled={actionLoading}
+              onClick={() =>
+                runAction(
+                  () => restoreTask(taskId),
+                  "Task restored successfully."
+                )
+              }
+              className="px-4 py-2 rounded-xl bg-blue-600 text-white disabled:opacity-50"
+            >
+              Restore Task
+            </button>
+          )}
+
+          <button
+            disabled={actionLoading}
+            onClick={handleDeleteTask}
+            className="px-4 py-2 rounded-xl border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-50"
+          >
+            Permanent Delete
+          </button>
         </div>
 
         {(task.status === "draft_generated" ||
           task.status === "revision_requested") && (
-            <textarea
-              value={feedback}
-              onChange={(e) => setFeedback(e.target.value)}
-              placeholder={
-                task.status === "revision_requested"
-                  ? "Optional note before regenerating the revised draft..."
-                  : "Write CEO feedback before approving, requesting revision, or rejecting..."
-              }
-              className="mt-4 w-full min-h-28 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-slate-300"
-            />
-          )}
+          <textarea
+            value={feedback}
+            onChange={(e) => setFeedback(e.target.value)}
+            placeholder={
+              task.status === "revision_requested"
+                ? "Optional note before regenerating the revised draft..."
+                : "Write CEO feedback before approving, requesting revision, or rejecting..."
+            }
+            className="mt-4 w-full min-h-28 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-slate-300"
+          />
+        )}
       </div>
 
       {output && (
@@ -378,6 +453,7 @@ const TaskDetail = () => {
           </div>
 
           <p className="mt-4 text-slate-700">{output.seo_summary}</p>
+
           {output.task_category && (
             <div className="mt-3">
               <span className="text-xs px-3 py-1 rounded-full bg-indigo-100 text-indigo-700">
@@ -389,8 +465,14 @@ const TaskDetail = () => {
           <div className="grid lg:grid-cols-2 gap-5 mt-5">
             {output.seo_analysis && (
               <>
-                <OutputList title="SEO Audit Plan" items={output.seo_audit_plan} />
-                <OutputList title="Target Keywords" items={output.target_keywords} />
+                <OutputList
+                  title="SEO Audit Plan"
+                  items={output.seo_audit_plan}
+                />
+                <OutputList
+                  title="Target Keywords"
+                  items={output.target_keywords}
+                />
                 <OutputList
                   title="On-Page Suggestions"
                   items={output.on_page_suggestions}
@@ -399,9 +481,18 @@ const TaskDetail = () => {
                   title="Technical SEO"
                   items={output.technical_seo_suggestions}
                 />
-                <OutputList title="Content Strategy" items={output.content_strategy} />
-                <OutputList title="AEO Suggestions" items={output.aeo_suggestions} />
-                <OutputList title="GEO Suggestions" items={output.geo_suggestions} />
+                <OutputList
+                  title="Content Strategy"
+                  items={output.content_strategy}
+                />
+                <OutputList
+                  title="AEO Suggestions"
+                  items={output.aeo_suggestions}
+                />
+                <OutputList
+                  title="GEO Suggestions"
+                  items={output.geo_suggestions}
+                />
                 <OutputList
                   title="LLM Optimization"
                   items={output.llm_optimization_suggestions}
@@ -435,7 +526,9 @@ const TaskDetail = () => {
                   </div>
 
                   <div>
-                    <p className="font-medium text-slate-900">Meta Description</p>
+                    <p className="font-medium text-slate-900">
+                      Meta Description
+                    </p>
                     <p>{output.content_generation.meta_description}</p>
                   </div>
 
@@ -450,32 +543,47 @@ const TaskDetail = () => {
                   />
 
                   <div>
-                    <p className="font-medium text-slate-900 mb-2">Full Blog Content</p>
+                    <p className="font-medium text-slate-900 mb-2">
+                      Full Blog Content
+                    </p>
                     <p className="whitespace-pre-line leading-7">
                       {output.content_generation.full_blog_content}
                     </p>
                   </div>
 
                   <div>
-                    <p className="font-medium text-slate-900 mb-2">FAQ Section</p>
+                    <p className="font-medium text-slate-900 mb-2">
+                      FAQ Section
+                    </p>
                     <div className="space-y-3">
-                      {output.content_generation.faq_section?.map((faq, index) => (
-                        <div key={index} className="bg-white border rounded-xl p-3">
-                          <p className="font-medium">{faq.question}</p>
-                          <p className="text-slate-600 mt-1">{faq.answer}</p>
-                        </div>
-                      ))}
+                      {output.content_generation.faq_section?.map(
+                        (faq, index) => (
+                          <div
+                            key={index}
+                            className="bg-white border rounded-xl p-3"
+                          >
+                            <p className="font-medium">{faq.question}</p>
+                            <p className="text-slate-600 mt-1">
+                              {faq.answer}
+                            </p>
+                          </div>
+                        )
+                      )}
                     </div>
                   </div>
 
                   <OutputList
                     title="Internal Linking Suggestions"
-                    items={output.content_generation.internal_linking_suggestions}
+                    items={
+                      output.content_generation.internal_linking_suggestions
+                    }
                   />
 
                   <div className="bg-white border rounded-xl p-3">
                     <p className="font-medium text-slate-900">CTA</p>
-                    <p className="text-slate-600 mt-1">{output.content_generation.cta}</p>
+                    <p className="text-slate-600 mt-1">
+                      {output.content_generation.cta}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -489,7 +597,9 @@ const TaskDetail = () => {
           <h3 className="text-xl font-semibold">CEO Review History</h3>
           <div className="mt-4 space-y-3">
             {reviews.length === 0 ? (
-              <p className="text-slate-500">No CEO review has been submitted yet.</p>
+              <p className="text-slate-500">
+                No CEO review has been submitted yet.
+              </p>
             ) : (
               reviews.map((review) => (
                 <div key={review.id} className="border rounded-xl p-3">
@@ -510,9 +620,15 @@ const TaskDetail = () => {
           </p>
 
           <div className="mt-4 grid grid-cols-3 gap-3">
-            <InfoBox label="Requests" value={usage?.summary?.total_requests || 0} />
+            <InfoBox
+              label="Requests"
+              value={usage?.summary?.total_requests || 0}
+            />
             <InfoBox label="Tokens" value={usage?.summary?.total_tokens || 0} />
-            <InfoBox label="Cost $" value={usage?.summary?.total_cost_usd || 0} />
+            <InfoBox
+              label="Cost $"
+              value={usage?.summary?.total_cost_usd || 0}
+            />
           </div>
         </div>
       </div>

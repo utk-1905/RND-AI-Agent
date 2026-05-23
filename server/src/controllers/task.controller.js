@@ -109,9 +109,89 @@ const getFullTaskDetails = async (req, res) => {
   }
 };
 
+/**
+ * Controller for archiving a task.
+ */
+const archiveTask = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const { changed_by } = req.body;
+
+    const task = await taskService.archiveTask({
+      taskId,
+      changed_by,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Task archived successfully.",
+      data: task,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to archive task.",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Controller for restoring an archived task.
+ */
+const restoreTask = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const { changed_by } = req.body;
+
+    const task = await taskService.restoreTask({
+      taskId,
+      changed_by,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Task restored successfully.",
+      data: task,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to restore task.",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Controller for permanently deleting a task.
+ */
+const permanentlyDeleteTask = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+
+    const deletedTask = await taskService.permanentlyDeleteTask(taskId);
+
+    return res.status(200).json({
+      success: true,
+      message: "Task permanently deleted successfully.",
+      data: deletedTask,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to permanently delete task.",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createTask,
   getAllTasks,
   getTaskById,
   getFullTaskDetails,
+  archiveTask,
+  restoreTask,
+  permanentlyDeleteTask,
 };
