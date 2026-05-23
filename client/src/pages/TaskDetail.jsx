@@ -113,8 +113,8 @@ const TaskDetail = () => {
       console.error(error);
       setMessage(
         error?.response?.data?.error ||
-          error?.response?.data?.message ||
-          "Action failed."
+        error?.response?.data?.message ||
+        "Action failed."
       );
     } finally {
       setActionLoading(false);
@@ -193,9 +193,8 @@ const TaskDetail = () => {
 
           <div className="mt-4 flex flex-wrap gap-2">
             <span
-              className={`text-xs font-medium px-3 py-1 rounded-full ${
-                statusClass[task.status] || "bg-slate-100 text-slate-700"
-              }`}
+              className={`text-xs font-medium px-3 py-1 rounded-full ${statusClass[task.status] || "bg-slate-100 text-slate-700"
+                }`}
             >
               {readableStatus}
             </span>
@@ -237,9 +236,8 @@ const TaskDetail = () => {
           </div>
 
           <span
-            className={`text-xs font-medium px-3 py-1 rounded-full w-fit ${
-              statusClass[task.status] || "bg-slate-100 text-slate-700"
-            }`}
+            className={`text-xs font-medium px-3 py-1 rounded-full w-fit ${statusClass[task.status] || "bg-slate-100 text-slate-700"
+              }`}
           >
             {readableStatus}
           </span>
@@ -351,17 +349,17 @@ const TaskDetail = () => {
 
         {(task.status === "draft_generated" ||
           task.status === "revision_requested") && (
-          <textarea
-            value={feedback}
-            onChange={(e) => setFeedback(e.target.value)}
-            placeholder={
-              task.status === "revision_requested"
-                ? "Optional note before regenerating the revised draft..."
-                : "Write CEO feedback before approving, requesting revision, or rejecting..."
-            }
-            className="mt-4 w-full min-h-28 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-slate-300"
-          />
-        )}
+            <textarea
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
+              placeholder={
+                task.status === "revision_requested"
+                  ? "Optional note before regenerating the revised draft..."
+                  : "Write CEO feedback before approving, requesting revision, or rejecting..."
+              }
+              className="mt-4 w-full min-h-28 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-slate-300"
+            />
+          )}
       </div>
 
       {output && (
@@ -380,25 +378,108 @@ const TaskDetail = () => {
           </div>
 
           <p className="mt-4 text-slate-700">{output.seo_summary}</p>
+          {output.task_category && (
+            <div className="mt-3">
+              <span className="text-xs px-3 py-1 rounded-full bg-indigo-100 text-indigo-700">
+                Task Category: {output.task_category}
+              </span>
+            </div>
+          )}
 
           <div className="grid lg:grid-cols-2 gap-5 mt-5">
-            <OutputList title="Target Keywords" items={output.target_keywords} />
-            <OutputList
-              title="On-Page Suggestions"
-              items={output.on_page_suggestions}
-            />
-            <OutputList
-              title="Technical SEO"
-              items={output.technical_seo_suggestions}
-            />
-            <OutputList title="Content Strategy" items={output.content_strategy} />
-            <OutputList title="AEO Suggestions" items={output.aeo_suggestions} />
-            <OutputList title="GEO Suggestions" items={output.geo_suggestions} />
-            <OutputList
-              title="LLM Optimization"
-              items={output.llm_optimization_suggestions}
-            />
-            <OutputList title="Next Steps" items={output.next_steps} />
+            {output.seo_analysis && (
+              <>
+                <OutputList title="SEO Audit Plan" items={output.seo_audit_plan} />
+                <OutputList title="Target Keywords" items={output.target_keywords} />
+                <OutputList
+                  title="On-Page Suggestions"
+                  items={output.on_page_suggestions}
+                />
+                <OutputList
+                  title="Technical SEO"
+                  items={output.technical_seo_suggestions}
+                />
+                <OutputList title="Content Strategy" items={output.content_strategy} />
+                <OutputList title="AEO Suggestions" items={output.aeo_suggestions} />
+                <OutputList title="GEO Suggestions" items={output.geo_suggestions} />
+                <OutputList
+                  title="LLM Optimization"
+                  items={output.llm_optimization_suggestions}
+                />
+                <OutputList title="Next Steps" items={output.next_steps} />
+              </>
+            )}
+
+            {output.content_generation && (
+              <div className="lg:col-span-2 border rounded-xl p-4 bg-slate-50">
+                <h4 className="font-semibold mb-3">Content Generation</h4>
+
+                <div className="space-y-4 text-sm text-slate-700">
+                  <div>
+                    <p className="font-medium text-slate-900">Blog Title</p>
+                    <p>{output.content_generation.blog_title}</p>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="font-medium text-slate-900">Meta Title</p>
+                      <p>{output.content_generation.meta_title}</p>
+                    </div>
+
+                    <div>
+                      <p className="font-medium text-slate-900">Slug</p>
+                      <p className="font-mono text-xs">
+                        {output.content_generation.slug}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="font-medium text-slate-900">Meta Description</p>
+                    <p>{output.content_generation.meta_description}</p>
+                  </div>
+
+                  <OutputList
+                    title="Content Target Keywords"
+                    items={output.content_generation.target_keywords}
+                  />
+
+                  <OutputList
+                    title="Blog Outline"
+                    items={output.content_generation.blog_outline}
+                  />
+
+                  <div>
+                    <p className="font-medium text-slate-900 mb-2">Full Blog Content</p>
+                    <p className="whitespace-pre-line leading-7">
+                      {output.content_generation.full_blog_content}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="font-medium text-slate-900 mb-2">FAQ Section</p>
+                    <div className="space-y-3">
+                      {output.content_generation.faq_section?.map((faq, index) => (
+                        <div key={index} className="bg-white border rounded-xl p-3">
+                          <p className="font-medium">{faq.question}</p>
+                          <p className="text-slate-600 mt-1">{faq.answer}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <OutputList
+                    title="Internal Linking Suggestions"
+                    items={output.content_generation.internal_linking_suggestions}
+                  />
+
+                  <div className="bg-white border rounded-xl p-3">
+                    <p className="font-medium text-slate-900">CTA</p>
+                    <p className="text-slate-600 mt-1">{output.content_generation.cta}</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
