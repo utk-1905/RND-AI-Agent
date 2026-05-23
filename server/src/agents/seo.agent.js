@@ -226,11 +226,14 @@ const buildContentGeneration = (isRevision, revisionFeedback) => {
  * Later this can call Claude API using the same task + revision feedback input.
  */
 const runSeoAgent = async (task, revisionFeedback = null, forcedTaskCategory = null) => {
-  const prompt = buildSeoPrompt(task);
+  const detectedOrForcedCategory =
+    forcedTaskCategory || detectSeoTaskCategory(task, revisionFeedback);
+
+  const prompt = buildSeoPrompt(task, detectedOrForcedCategory, revisionFeedback);
   const isRevision = Boolean(revisionFeedback);
 
-  const taskCategory = forcedTaskCategory || detectSeoTaskCategory(task, revisionFeedback);
-  
+  const taskCategory = detectedOrForcedCategory;
+
   const shouldIncludeSeoAnalysis =
     taskCategory === "seo_audit" || taskCategory === "mixed";
 
@@ -275,10 +278,10 @@ const runSeoAgent = async (task, revisionFeedback = null, forcedTaskCategory = n
 
     revision_notes: isRevision
       ? [
-          "CEO feedback was considered while regenerating this output.",
-          revisionFeedback,
-          `Detected task category: ${taskCategory}`,
-        ]
+        "CEO feedback was considered while regenerating this output.",
+        revisionFeedback,
+        `Detected task category: ${taskCategory}`,
+      ]
       : [],
 
     internal_prompt_preview: prompt,
