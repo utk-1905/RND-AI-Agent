@@ -21,6 +21,59 @@ const statusClass = {
   finalized: "bg-emerald-100 text-emerald-700",
 };
 
+const statusLabel = {
+  created: "Awaiting Department Confirmation",
+  assigned: "Assigned to SEO Agent",
+  in_progress: "SEO Agent Working",
+  draft_generated: "Draft Ready for CEO Review",
+  approved: "Approved by CEO",
+  revision_requested: "Revision Requested",
+  rejected: "Rejected by CEO",
+  finalized: "Final Report Generated",
+};
+
+const getWorkflowHint = (status) => {
+  switch (status) {
+    case "created":
+      return "Confirm the SEO Department to assign this task and automatically generate the first SEO draft.";
+    case "assigned":
+      return "This task is assigned but the SEO draft has not been generated yet. Continue generation.";
+    case "in_progress":
+      return "The SEO Agent is currently working on this task.";
+    case "draft_generated":
+      return "The SEO draft is ready. Review it and choose approve, request revision, or reject.";
+    case "revision_requested":
+      return "CEO feedback has been saved. Generate a revised SEO draft using the feedback.";
+    case "approved":
+      return "The SEO draft is approved. Generate the final downloadable PDF report.";
+    case "finalized":
+      return "The final report has been generated. You can download the PDF report.";
+    case "rejected":
+      return "This task has been rejected. No further action is required.";
+    default:
+      return "Manage the SEO Agent workflow for this task.";
+  }
+};
+
+const getMessageClass = (message) => {
+  const lowerMessage = message.toLowerCase();
+
+  if (lowerMessage.includes("failed") || lowerMessage.includes("error")) {
+    return "border-red-200 bg-red-50 text-red-700";
+  }
+
+  if (
+    lowerMessage.includes("success") ||
+    lowerMessage.includes("generated") ||
+    lowerMessage.includes("approved") ||
+    lowerMessage.includes("confirmed")
+  ) {
+    return "border-green-200 bg-green-50 text-green-700";
+  }
+
+  return "border-slate-200 bg-white text-slate-700";
+};
+
 const TaskDetail = () => {
   const { taskId } = useParams();
 
@@ -53,18 +106,26 @@ const TaskDetail = () => {
       setMessage("");
 
       await actionFn();
+      setFeedback("");
       setMessage(successMessage);
       await loadDetails();
     } catch (error) {
       console.error(error);
       setMessage(
         error?.response?.data?.error ||
-        error?.response?.data?.message ||
-        "Action failed."
+          error?.response?.data?.message ||
+          "Action failed."
       );
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const handleConfirmAndGenerate = () => {
+    runAction(async () => {
+      await assignSeoTask(taskId);
+      await runSeoAgent(taskId);
+    }, "SEO Department confirmed and draft generated successfully.");
   };
 
   const handleApprove = () => {
@@ -73,9 +134,9 @@ const TaskDetail = () => {
         reviewTask(taskId, {
           reviewed_by: "CEO",
           decision: "approved",
-          feedback: feedback || "SEO draft approved.",
+          feedback: feedback || "SEO draft approved by CEO.",
         }),
-      "Task approved successfully."
+      "SEO draft approved successfully."
     );
   };
 
@@ -89,7 +150,7 @@ const TaskDetail = () => {
             feedback ||
             "Please improve this SEO output with more specific suggestions.",
         }),
-      "Revision requested successfully."
+      "Revision request saved successfully."
     );
   };
 
@@ -99,7 +160,7 @@ const TaskDetail = () => {
         reviewTask(taskId, {
           reviewed_by: "CEO",
           decision: "rejected",
-          feedback: feedback || "Output rejected by CEO.",
+          feedback: feedback || "SEO output rejected by CEO.",
         }),
       "Task rejected successfully."
     );
@@ -117,6 +178,7 @@ const TaskDetail = () => {
     details;
 
   const output = latest_output?.output_content;
+  const readableStatus = statusLabel[task.status] || task.status;
 
   return (
     <div>
@@ -131,11 +193,13 @@ const TaskDetail = () => {
 
           <div className="mt-4 flex flex-wrap gap-2">
             <span
-              className={`text-xs font-medium px-3 py-1 rounded-full ${statusClass[task.status] || "bg-slate-100 text-slate-700"
-                }`}
+              className={`text-xs font-medium px-3 py-1 rounded-full ${
+                statusClass[task.status] || "bg-slate-100 text-slate-700"
+              }`}
             >
-              {task.status}
+              {readableStatus}
             </span>
+
             <span className="text-xs font-medium px-3 py-1 rounded-full bg-white border">
               Priority: {task.priority}
             </span>
@@ -145,39 +209,52 @@ const TaskDetail = () => {
         <div className="bg-white border rounded-2xl p-4 min-w-64">
           <p className="text-sm text-slate-500">Assigned Agent</p>
           <h3 className="font-semibold mt-1">
-            {assignment?.agents?.agent_name || "Not assigned"}
+            {assignment?.agents?.agent_name || "Not assigned yet"}
           </h3>
           <p className="text-sm text-slate-500">
-            {assignment?.departments?.name || "No department"}
+            {assignment?.departments?.name || "No department confirmed"}
           </p>
         </div>
       </div>
 
       {message && (
-        <div className="mt-5 rounded-xl border bg-white px-4 py-3 text-sm">
+        <div
+          className={`mt-5 rounded-xl border px-4 py-3 text-sm ${getMessageClass(
+            message
+          )}`}
+        >
           {message}
         </div>
       )}
 
       <div className="mt-6 bg-white border rounded-2xl p-5">
-        <h3 className="text-xl font-semibold">Workflow Actions</h3>
-        <p className="text-sm text-slate-500 mt-1">
-          Control the SEO Agent workflow for this task.
-        </p>
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+          <div>
+            <h3 className="text-xl font-semibold">Workflow Control</h3>
+            <p className="text-sm text-slate-500 mt-1">
+              {getWorkflowHint(task.status)}
+            </p>
+          </div>
+
+          <span
+            className={`text-xs font-medium px-3 py-1 rounded-full w-fit ${
+              statusClass[task.status] || "bg-slate-100 text-slate-700"
+            }`}
+          >
+            {readableStatus}
+          </span>
+        </div>
 
         <div className="mt-4 flex flex-wrap gap-3">
           {task.status === "created" && (
             <button
               disabled={actionLoading}
-              onClick={() =>
-                runAction(async () => {
-                  await assignSeoTask(taskId);
-                  await runSeoAgent(taskId);
-                }, "SEO Department confirmed and SEO Agent generated draft output.")
-              }
+              onClick={handleConfirmAndGenerate}
               className="px-4 py-2 rounded-xl bg-slate-950 text-white disabled:opacity-50"
             >
-              Confirm SEO Department & Generate Draft
+              {actionLoading
+                ? "Confirming & Generating..."
+                : "Confirm SEO Department & Generate Draft"}
             </button>
           )}
 
@@ -187,12 +264,12 @@ const TaskDetail = () => {
               onClick={() =>
                 runAction(
                   () => runSeoAgent(taskId),
-                  "SEO Agent generated draft output."
+                  "SEO draft generated successfully."
                 )
               }
               className="px-4 py-2 rounded-xl bg-blue-600 text-white disabled:opacity-50"
             >
-              Continue SEO Agent Generation
+              {actionLoading ? "Generating..." : "Continue Draft Generation"}
             </button>
           )}
 
@@ -203,7 +280,7 @@ const TaskDetail = () => {
                 onClick={handleApprove}
                 className="px-4 py-2 rounded-xl bg-green-600 text-white disabled:opacity-50"
               >
-                Approve
+                Approve Draft
               </button>
 
               <button
@@ -219,7 +296,7 @@ const TaskDetail = () => {
                 onClick={handleReject}
                 className="px-4 py-2 rounded-xl bg-red-600 text-white disabled:opacity-50"
               >
-                Reject
+                Reject Draft
               </button>
             </>
           )}
@@ -230,12 +307,12 @@ const TaskDetail = () => {
               onClick={() =>
                 runAction(
                   () => reviseSeoOutput(taskId),
-                  "SEO Agent revised the output."
+                  "Revised SEO draft generated successfully."
                 )
               }
               className="px-4 py-2 rounded-xl bg-purple-600 text-white disabled:opacity-50"
             >
-              Regenerate Revised Output
+              {actionLoading ? "Regenerating..." : "Generate Revised Draft"}
             </button>
           )}
 
@@ -245,12 +322,12 @@ const TaskDetail = () => {
               onClick={() =>
                 runAction(
                   () => finalizeTask(taskId),
-                  "Final PDF report generated."
+                  "Final PDF report generated successfully."
                 )
               }
               className="px-4 py-2 rounded-xl bg-slate-950 text-white disabled:opacity-50"
             >
-              Generate Final Report
+              {actionLoading ? "Generating Report..." : "Generate Final Report"}
             </button>
           )}
 
@@ -261,26 +338,48 @@ const TaskDetail = () => {
               rel="noreferrer"
               className="px-4 py-2 rounded-xl bg-emerald-600 text-white"
             >
-              Download PDF Report
+              Download Final PDF Report
             </a>
+          )}
+
+          {task.status === "rejected" && (
+            <div className="px-4 py-2 rounded-xl bg-red-50 text-red-700 border border-red-200">
+              Task closed after CEO rejection.
+            </div>
           )}
         </div>
 
         {(task.status === "draft_generated" ||
           task.status === "revision_requested") && (
-            <textarea
-              value={feedback}
-              onChange={(e) => setFeedback(e.target.value)}
-              placeholder="CEO feedback for approval/revision/rejection..."
-              className="mt-4 w-full min-h-28 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-slate-300"
-            />
-          )}
+          <textarea
+            value={feedback}
+            onChange={(e) => setFeedback(e.target.value)}
+            placeholder={
+              task.status === "revision_requested"
+                ? "Optional note before regenerating the revised draft..."
+                : "Write CEO feedback before approving, requesting revision, or rejecting..."
+            }
+            className="mt-4 w-full min-h-28 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-slate-300"
+          />
+        )}
       </div>
 
       {output && (
         <div className="mt-6 bg-white border rounded-2xl p-5">
-          <h3 className="text-xl font-semibold">Latest SEO Output</h3>
-          <p className="mt-3 text-slate-700">{output.seo_summary}</p>
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold">Latest SEO Output</h3>
+              <p className="text-sm text-slate-500 mt-1">
+                Generated by SEO AI Agent in mock mode.
+              </p>
+            </div>
+
+            <span className="text-xs px-3 py-1 rounded-full bg-slate-100 text-slate-600">
+              {latest_output?.output_type}
+            </span>
+          </div>
+
+          <p className="mt-4 text-slate-700">{output.seo_summary}</p>
 
           <div className="grid lg:grid-cols-2 gap-5 mt-5">
             <OutputList title="Target Keywords" items={output.target_keywords} />
@@ -306,15 +405,17 @@ const TaskDetail = () => {
 
       <div className="grid lg:grid-cols-2 gap-6 mt-6">
         <div className="bg-white border rounded-2xl p-5">
-          <h3 className="text-xl font-semibold">CEO Reviews</h3>
+          <h3 className="text-xl font-semibold">CEO Review History</h3>
           <div className="mt-4 space-y-3">
             {reviews.length === 0 ? (
-              <p className="text-slate-500">No reviews yet.</p>
+              <p className="text-slate-500">No CEO review has been submitted yet.</p>
             ) : (
               reviews.map((review) => (
                 <div key={review.id} className="border rounded-xl p-3">
                   <p className="font-medium">{review.decision}</p>
-                  <p className="text-sm text-slate-500">{review.feedback}</p>
+                  <p className="text-sm text-slate-500 mt-1">
+                    {review.feedback || "No feedback provided."}
+                  </p>
                 </div>
               ))
             )}
@@ -323,6 +424,10 @@ const TaskDetail = () => {
 
         <div className="bg-white border rounded-2xl p-5">
           <h3 className="text-xl font-semibold">AI Usage</h3>
+          <p className="text-sm text-slate-500 mt-1">
+            Mock usage now. Claude usage will appear here later.
+          </p>
+
           <div className="mt-4 grid grid-cols-3 gap-3">
             <InfoBox label="Requests" value={usage?.summary?.total_requests || 0} />
             <InfoBox label="Tokens" value={usage?.summary?.total_tokens || 0} />
@@ -332,7 +437,11 @@ const TaskDetail = () => {
       </div>
 
       <div className="mt-6 bg-white border rounded-2xl p-5">
-        <h3 className="text-xl font-semibold">Status Timeline</h3>
+        <h3 className="text-xl font-semibold">Workflow Timeline</h3>
+        <p className="text-sm text-slate-500 mt-1">
+          Every status change is recorded for tracking and demo clarity.
+        </p>
+
         <div className="mt-4 space-y-3">
           {status_logs.map((log) => (
             <div key={log.id} className="border-l-4 border-slate-300 pl-4">
