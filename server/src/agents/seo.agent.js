@@ -225,12 +225,12 @@ const buildContentGeneration = (isRevision, revisionFeedback) => {
  * Runs in mock mode for now.
  * Later this can call Claude API using the same task + revision feedback input.
  */
-const runSeoAgent = async (task, revisionFeedback = null) => {
+const runSeoAgent = async (task, revisionFeedback = null, forcedTaskCategory = null) => {
   const prompt = buildSeoPrompt(task);
   const isRevision = Boolean(revisionFeedback);
 
-  const taskCategory = detectSeoTaskCategory(task, revisionFeedback);
-
+  const taskCategory = forcedTaskCategory || detectSeoTaskCategory(task, revisionFeedback);
+  
   const shouldIncludeSeoAnalysis =
     taskCategory === "seo_audit" || taskCategory === "mixed";
 

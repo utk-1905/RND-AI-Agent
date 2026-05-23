@@ -68,6 +68,26 @@ const reviseSeoOutputForTask = async ({ taskId, triggered_by }) => {
     throw new Error("Task is not assigned to SEO AI Agent.");
   }
 
+  // 5.1 Get latest existing agent output to preserve task category during revision
+  const { data: latestExistingOutput, error: latestOutputError } = await supabase
+    .from("agent_outputs")
+    .select("*")
+    .eq("task_id", taskId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (latestOutputError) {
+    throw new Error(latestOutputError.message);
+  }
+
+  if (!latestExistingOutput) {
+    throw new Error("No previous agent output found for revision.");
+  }
+
+  const previousTaskCategory =
+    latestExistingOutput.output_content?.task_category || null;
+
   // 6. Get latest revision feedback from reviews table
   const { data: latestRevisionReview, error: reviewError } = await supabase
     .from("reviews")
@@ -120,7 +140,11 @@ const reviseSeoOutputForTask = async ({ taskId, triggered_by }) => {
   }
 
   // 9. Run SEO Agent with revision feedback
-  const revisedSeoOutput = await runSeoAgent(task, revisionFeedback);
+  const revisedSeoOutput = await runSeoAgent(
+    task,
+    revisionFeedback,
+    previousTaskCategory
+  );
 
   // 10. Save revised output
   const { data: savedOutput, error: outputError } = await supabase
