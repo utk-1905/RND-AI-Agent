@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { PlusCircle, Eye, RefreshCw } from "lucide-react";
 import { getTasks } from "../api/taskApi";
@@ -21,6 +21,8 @@ const getStatusBadgeClass = (status) => {
       return "bg-red-100 text-red-700";
     case "finalized":
       return "bg-emerald-100 text-emerald-700";
+    case "archived":
+      return "bg-zinc-100 text-zinc-700";
     default:
       return "bg-slate-100 text-slate-700";
   }
@@ -39,8 +41,18 @@ const getPriorityBadgeClass = (priority) => {
   }
 };
 
+const activeStatuses = [
+  "created",
+  "assigned",
+  "in_progress",
+  "draft_generated",
+  "approved",
+  "revision_requested",
+];
+
 const Tasks = () => {
   const [tasks, setTasks] = useState([]);
+  const [activeFilter, setActiveFilter] = useState("active");
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -63,13 +75,41 @@ const Tasks = () => {
     loadTasks();
   }, []);
 
+  const counts = useMemo(() => {
+    return {
+      all: tasks.length,
+      active: tasks.filter((task) => activeStatuses.includes(task.status)).length,
+      finalized: tasks.filter((task) => task.status === "finalized").length,
+      rejected: tasks.filter((task) => task.status === "rejected").length,
+      archived: tasks.filter((task) => task.status === "archived").length,
+    };
+  }, [tasks]);
+
+  const filteredTasks = useMemo(() => {
+    if (activeFilter === "all") return tasks;
+
+    if (activeFilter === "active") {
+      return tasks.filter((task) => activeStatuses.includes(task.status));
+    }
+
+    return tasks.filter((task) => task.status === activeFilter);
+  }, [tasks, activeFilter]);
+
+  const filters = [
+    { key: "active", label: "Active", count: counts.active },
+    { key: "all", label: "All", count: counts.all },
+    { key: "finalized", label: "Finalized", count: counts.finalized },
+    { key: "rejected", label: "Rejected", count: counts.rejected },
+    { key: "archived", label: "Archived", count: counts.archived },
+  ];
+
   return (
     <div>
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
           <h2 className="text-3xl font-bold">Tasks</h2>
           <p className="text-slate-500 mt-1">
-            Manage CEO tasks and SEO Agent workflow.
+            Manage CEO tasks across active, finalized, rejected, and archived states.
           </p>
         </div>
 
@@ -98,12 +138,35 @@ const Tasks = () => {
         </div>
       )}
 
+      <div className="mb-5 flex flex-wrap gap-2">
+        {filters.map((filter) => (
+          <button
+            key={filter.key}
+            onClick={() => setActiveFilter(filter.key)}
+            className={`px-4 py-2 rounded-xl border text-sm transition ${
+              activeFilter === filter.key
+                ? "bg-slate-950 text-white border-slate-950"
+                : "bg-white text-slate-700 hover:bg-slate-50"
+            }`}
+          >
+            {filter.label}{" "}
+            <span
+              className={`ml-1 ${
+                activeFilter === filter.key ? "text-slate-300" : "text-slate-400"
+              }`}
+            >
+              ({filter.count})
+            </span>
+          </button>
+        ))}
+      </div>
+
       <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
         {loading ? (
           <div className="p-6 text-slate-500">Loading tasks...</div>
-        ) : tasks.length === 0 ? (
+        ) : filteredTasks.length === 0 ? (
           <div className="p-6 text-slate-500">
-            No tasks available. Create your first SEO task.
+            No tasks found for this filter.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -129,7 +192,7 @@ const Tasks = () => {
               </thead>
 
               <tbody>
-                {tasks.map((task) => (
+                {filteredTasks.map((task) => (
                   <tr key={task.id} className="border-b last:border-b-0">
                     <td className="px-5 py-4">
                       <h3 className="font-semibold text-slate-900">
