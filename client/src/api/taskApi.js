@@ -47,3 +47,7 @@ export const finalizeTask = async (taskId) => {
   });
   return response.data;
 };
+
+export const downloadReportUrl = (taskId) => {
+  return `http://localhost:5000/api/reports/${taskId}/download`;
+};
