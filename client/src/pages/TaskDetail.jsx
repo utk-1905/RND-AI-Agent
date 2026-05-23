@@ -59,8 +59,8 @@ const TaskDetail = () => {
       console.error(error);
       setMessage(
         error?.response?.data?.error ||
-          error?.response?.data?.message ||
-          "Action failed."
+        error?.response?.data?.message ||
+        "Action failed."
       );
     } finally {
       setActionLoading(false);
@@ -131,9 +131,8 @@ const TaskDetail = () => {
 
           <div className="mt-4 flex flex-wrap gap-2">
             <span
-              className={`text-xs font-medium px-3 py-1 rounded-full ${
-                statusClass[task.status] || "bg-slate-100 text-slate-700"
-              }`}
+              className={`text-xs font-medium px-3 py-1 rounded-full ${statusClass[task.status] || "bg-slate-100 text-slate-700"
+                }`}
             >
               {task.status}
             </span>
@@ -171,14 +170,14 @@ const TaskDetail = () => {
             <button
               disabled={actionLoading}
               onClick={() =>
-                runAction(
-                  () => assignSeoTask(taskId),
-                  "Task assigned to SEO Agent."
-                )
+                runAction(async () => {
+                  await assignSeoTask(taskId);
+                  await runSeoAgent(taskId);
+                }, "SEO Department confirmed and SEO Agent generated draft output.")
               }
               className="px-4 py-2 rounded-xl bg-slate-950 text-white disabled:opacity-50"
             >
-              Confirm SEO Department
+              Confirm SEO Department & Generate Draft
             </button>
           )}
 
@@ -193,7 +192,7 @@ const TaskDetail = () => {
               }
               className="px-4 py-2 rounded-xl bg-blue-600 text-white disabled:opacity-50"
             >
-              Run SEO Agent
+              Continue SEO Agent Generation
             </button>
           )}
 
@@ -269,13 +268,13 @@ const TaskDetail = () => {
 
         {(task.status === "draft_generated" ||
           task.status === "revision_requested") && (
-          <textarea
-            value={feedback}
-            onChange={(e) => setFeedback(e.target.value)}
-            placeholder="CEO feedback for approval/revision/rejection..."
-            className="mt-4 w-full min-h-28 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-slate-300"
-          />
-        )}
+            <textarea
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
+              placeholder="CEO feedback for approval/revision/rejection..."
+              className="mt-4 w-full min-h-28 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-slate-300"
+            />
+          )}
       </div>
 
       {output && (
