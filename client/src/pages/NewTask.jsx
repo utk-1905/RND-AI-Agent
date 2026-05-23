@@ -62,7 +62,7 @@ const NewTask = () => {
       <div className="mb-6">
         <h2 className="text-3xl font-bold">Create New Task</h2>
         <p className="text-slate-500 mt-1">
-          Create a CEO task that can be assigned to the SEO AI Agent.
+          Create a CEO task that can later be assigned to the right department agent.
         </p>
       </div>
 
@@ -126,21 +126,6 @@ const NewTask = () => {
               {loading ? "Creating Task..." : "Create Task"}
             </button>
 
-            <button
-              type="button"
-              onClick={() =>
-                setFormData({
-                  title: "SEO improvement plan for RND Technosoft website",
-                  description:
-                    "Analyze the website SEO and create a plan for keywords, on-page SEO, technical SEO, AEO, GEO, and LLM optimization.",
-                  priority: "high",
-                  created_by: "CEO",
-                })
-              }
-              className="px-5 py-3 rounded-xl border bg-white hover:bg-slate-50"
-            >
-              Fill Sample SEO Task
-            </button>
           </div>
         </form>
       </div>
