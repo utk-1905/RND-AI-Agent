@@ -4,6 +4,7 @@ import {
   ListChecks,
   PlusCircle,
   BarChart3,
+  Building2,
 } from "lucide-react";
 
 const DashboardLayout = () => {
@@ -12,21 +13,31 @@ const DashboardLayout = () => {
       label: "Dashboard",
       path: "/dashboard",
       icon: LayoutDashboard,
+      end: true,
+    },
+    {
+      label: "Departments",
+      path: "/departments",
+      icon: Building2,
+      end: true,
     },
     {
       label: "Tasks",
       path: "/tasks",
       icon: ListChecks,
+      end: true,
     },
     {
       label: "New Task",
       path: "/tasks/new",
       icon: PlusCircle,
+      end: true,
     },
     {
       label: "Billing Usage",
       path: "/billing",
       icon: BarChart3,
+      end: true,
     },
   ];
 
@@ -44,29 +55,21 @@ const DashboardLayout = () => {
               <NavLink
                 key={item.path}
                 to={item.path}
-                end={item.path === "/tasks"}
+                end={item.end}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-4 py-3 rounded-xl transition ${isActive
-                    ? "bg-white text-slate-950"
-                    : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                  `flex items-center gap-3 px-4 py-3 rounded-xl transition ${
+                    isActive
+                      ? "bg-white text-slate-950"
+                      : "text-slate-300 hover:bg-slate-800 hover:text-white"
                   }`
                 }
               >
-
                 <Icon size={18} />
                 {item.label}
               </NavLink>
             );
           })}
         </nav>
-
-        <div className="mt-10 rounded-2xl bg-slate-900 p-4 border border-slate-800">
-          <p className="text-xs text-slate-400">Current MVP Module</p>
-          <p className="font-semibold mt-1">SEO AI Agent</p>
-          <p className="text-xs text-slate-400 mt-2">
-            Running in mock mode. Claude integration will be added later.
-          </p>
-        </div>
       </aside>
 
       <main className="flex-1 p-6 overflow-x-hidden">

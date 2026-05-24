@@ -113,10 +113,13 @@ const Dashboard = () => {
 
         <div className="bg-slate-950 text-white rounded-2xl shadow-sm p-5">
           <h3 className="text-xl font-semibold">Demo Flow</h3>
-          <p className="text-sm text-slate-300 mt-2">
-            Create a task, confirm the SEO Department, review the generated
-            draft, approve it, then generate and download the final PDF report.
-          </p>
+          <div className="mt-5 space-y-3 text-sm text-slate-300">
+            <p>1. Create CEO Task</p>
+            <p>2. Confirm Suggested Department</p>
+            <p>3. Agent Generates Output</p>
+            <p>4. CEO Review / Revision</p>
+            <p>5. Final Report / Archive</p>
+          </div>
 
           <div className="mt-5 space-y-3 text-sm text-slate-300">
             <p>1. New Task</p>
