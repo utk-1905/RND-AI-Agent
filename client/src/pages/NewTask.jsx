@@ -62,7 +62,7 @@ const NewTask = () => {
       <div className="mb-6">
         <h2 className="text-3xl font-bold">Create New Task</h2>
         <p className="text-slate-500 mt-1">
-          Create a CEO task that can later be assigned to the right department agent.
+          Create a task that can later be assigned to the right department agents.
         </p>
       </div>
 
@@ -96,7 +96,7 @@ const NewTask = () => {
               name="description"
               value={formData.description}
               onChange={handleChange}
-              placeholder="Describe what the SEO Agent should analyze and generate..."
+              placeholder="Describe what the Agents should analyze and generate..."
               className="w-full min-h-40 border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-slate-300"
             />
           </div>
