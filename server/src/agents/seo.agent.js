@@ -2,7 +2,16 @@ const { buildSeoPrompt } = require("../prompts/seo.prompt");
 
 /**
  * Detect what type of SEO task the CEO is asking for.
- * This is mock-mode logic. Later Claude can classify this more intelligently.
+ *
+ * Priority:
+ * 1. Strict task type marker
+ * 2. Strong intent detection
+ * 3. Default to seo_audit
+ *
+ * Supported categories:
+ * - seo_audit
+ * - content_generation
+ * - mixed
  */
 const detectSeoTaskCategory = (task, revisionFeedback = "") => {
   const text = `
@@ -11,47 +20,77 @@ const detectSeoTaskCategory = (task, revisionFeedback = "") => {
     ${revisionFeedback || ""}
   `.toLowerCase();
 
-  const contentKeywords = [
-    "blog",
-    "article",
-    "content",
-    "caption",
-    "copy",
-    "write",
-    "meta title",
-    "meta description",
-    "landing page",
-    "faq",
-    "cta",
-    "website copy",
+  // 1. Strict explicit markers
+  if (
+    text.includes("task type: seo_audit") ||
+    text.includes("task type: seo audit") ||
+    text.includes("[seo_audit]")
+  ) {
+    return "seo_audit";
+  }
+
+  if (
+    text.includes("task type: content_generation") ||
+    text.includes("task type: content generation") ||
+    text.includes("[content_generation]")
+  ) {
+    return "content_generation";
+  }
+
+  if (
+    text.includes("task type: mixed") ||
+    text.includes("task type: seo_content") ||
+    text.includes("[mixed]")
+  ) {
+    return "mixed";
+  }
+
+  // 2. Strong content generation intent
+  const strongContentSignals = [
+    "write a blog",
+    "write an article",
+    "create a blog",
+    "create an article",
+    "draft a blog",
+    "draft an article",
+    "generate blog",
+    "generate article",
+    "full blog content",
+    "blog outline",
+    "faq section",
+    "write website copy",
+    "create website copy",
+    "landing page content",
     "service page content",
+    "copywriting",
   ];
 
-  const auditKeywords = [
-    "audit",
-    "analyze",
-    "analysis",
+  // 3. Strong SEO audit intent
+  const strongAuditSignals = [
+    "seo audit",
+    "audit plan",
+    "analyze website seo",
+    "analyze the website",
     "technical seo",
-    "on-page",
-    "keywords",
-    "ranking",
-    "optimization",
-    "geo",
-    "aeo",
-    "llm",
+    "on-page seo",
+    "site speed",
     "sitemap",
-    "robots",
-    "speed",
+    "robots.txt",
     "broken links",
+    "seo improvement plan",
     "seo plan",
-    "improvement plan",
+    "geo suggestions",
+    "aeo suggestions",
+    "llm optimization",
   ];
 
-  const hasContentIntent = contentKeywords.some((keyword) =>
-    text.includes(keyword)
+  const hasContentIntent = strongContentSignals.some((signal) =>
+    text.includes(signal)
   );
 
-  const hasAuditIntent = auditKeywords.some((keyword) => text.includes(keyword));
+  const hasAuditIntent = strongAuditSignals.some((signal) =>
+    text.includes(signal)
+  );
 
   if (hasContentIntent && hasAuditIntent) {
     return "mixed";
@@ -225,13 +264,21 @@ const buildContentGeneration = (isRevision, revisionFeedback) => {
  * Runs in mock mode for now.
  * Later this can call Claude API using the same task + revision feedback input.
  */
-const runSeoAgent = async (task, revisionFeedback = null, forcedTaskCategory = null) => {
+const runSeoAgent = async (
+  task,
+  revisionFeedback = null,
+  forcedTaskCategory = null
+) => {
   const detectedOrForcedCategory =
     forcedTaskCategory || detectSeoTaskCategory(task, revisionFeedback);
 
-  const prompt = buildSeoPrompt(task, detectedOrForcedCategory, revisionFeedback);
-  const isRevision = Boolean(revisionFeedback);
+  const prompt = buildSeoPrompt(
+    task,
+    detectedOrForcedCategory,
+    revisionFeedback
+  );
 
+  const isRevision = Boolean(revisionFeedback);
   const taskCategory = detectedOrForcedCategory;
 
   const shouldIncludeSeoAnalysis =
@@ -273,15 +320,16 @@ const runSeoAgent = async (task, revisionFeedback = null, forcedTaskCategory = n
     content_strategy: seoAnalysis?.content_strategy || [],
     aeo_suggestions: seoAnalysis?.aeo_suggestions || [],
     geo_suggestions: seoAnalysis?.geo_suggestions || [],
-    llm_optimization_suggestions: seoAnalysis?.llm_optimization_suggestions || [],
+    llm_optimization_suggestions:
+      seoAnalysis?.llm_optimization_suggestions || [],
     next_steps: seoAnalysis?.next_steps || [],
 
     revision_notes: isRevision
       ? [
-        "CEO feedback was considered while regenerating this output.",
-        revisionFeedback,
-        `Detected task category: ${taskCategory}`,
-      ]
+          "CEO feedback was considered while regenerating this output.",
+          revisionFeedback,
+          `Detected task category: ${taskCategory}`,
+        ]
       : [],
 
     internal_prompt_preview: prompt,
